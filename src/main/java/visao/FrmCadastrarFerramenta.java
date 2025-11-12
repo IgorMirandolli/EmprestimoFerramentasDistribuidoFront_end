@@ -2,6 +2,8 @@ package visao;
 
 import modelo.Ferramenta;
 import javax.swing.JOptionPane;
+import java.rmi.RemoteException;
+import rmi.RMIClient;
 
 
 
@@ -138,21 +140,21 @@ public class FrmCadastrarFerramenta extends javax.swing.JFrame {
     private void JBCadastrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JBCadastrarActionPerformed
         // TODO add your handling code here:
         try{
-            
-          Ferramenta ferramenta = new Ferramenta();  
+
+          Ferramenta ferramenta = new Ferramenta();
           String NomeFerramentas = "";
           double CustoFerrametas = 0.0;
           String MarcaFerramentas = "";
-          
+
           if(this.JTFNomeF.getText().length() < 2){ /*Caso o texto no field tenha menos que 2 caracteres, manda um aviso dizendo que deve ter mais de 2 caracteres. */
               throw new Mensagem("Nome deve conter ao menos dois caracteres.");
           }else { /*Caso o texto no field seja maior de 2 caracteres, pega o texto e coloca na variavel NomeFerrramenta */
             NomeFerramentas = this.JTFNomeF.getText();
           }
-          
+
           if(this.JTFCustoF.getText().length() <= 0){ /*Caso o texto inserido no textfield seja menor que 0, numericamente , manda um aviso dizendo que deve ser maior que 0. */
               throw new Mensagem("Custo deve ser maior que zero.");
-          }else{ /*Caso o texto no field seja maior que 0, pega o texto covnerte para um valor tipo INT e coloca na variavel CustoFerramenta */
+          }else{ /*Caso o texto no field seja maior de 0, pega o texto converte para um valor tipo double e coloca na variavel CustoFerramenta */
            CustoFerrametas = Double.parseDouble(this.JTFCustoF.getText());
           }
           if(this.JTFMarcaF.getText().length() < 2){ /*Caso o texto no field tenha menos que 2 caracteres, manda um aviso dizendo que deve ter mais de 2 caracteres. */
@@ -160,15 +162,22 @@ public class FrmCadastrarFerramenta extends javax.swing.JFrame {
           }else{ /*Caso o texto no field seja maior de 2 caracteres, pega o texto e coloca na variavel MarcaFerramenta */
            MarcaFerramentas = this.JTFMarcaF.getText();
           }
-          
-          if(ferramenta.InsertFerramentaDB(NomeFerramentas, MarcaFerramentas, CustoFerrametas)){ /*Se tudo estiver de acordo com os requisitos acima, manda uma mensagem avisando que a ferramenta foi cadastrada com sucesso
-              e apaga todos os text fields.*/
-              JOptionPane.showMessageDialog(null, "Ferramenta Cadastrado com Sucesso!");
+
+          // Preenche o objeto e chama o serviço RMI para cadastrar
+          ferramenta.setNomeFerramentas(NomeFerramentas);
+          ferramenta.setMarcaFerramentas(MarcaFerramentas);
+          ferramenta.setCustoFerramenta(CustoFerrametas);
+
+          try {
+              RMIClient.getServico().cadastrarFerramenta(ferramenta);
+              JOptionPane.showMessageDialog(null, "Ferramenta cadastrada com sucesso!");
               this.JTFNomeF.setText("");
               this.JTFCustoF.setText("");
               this.JTFMarcaF.setText("");
-            }
-          
+          } catch (RemoteException rex) {
+              JOptionPane.showMessageDialog(null, "Erro ao comunicar com o servidor: " + rex.getMessage());
+          }
+
         } catch (Mensagem erro){ /* Caso não esteja de acordo com os requisitos acimas, manda aviso falando que não foi possivel */
             JOptionPane.showMessageDialog(null,erro.getMessage());
         } catch (NumberFormatException erro2){
