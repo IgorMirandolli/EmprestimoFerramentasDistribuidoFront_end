@@ -5,24 +5,25 @@
 package visao;
 
 import modelo.Amigo;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import java.rmi.RemoteException;
+import rmi.RMIClient;
 /**
  *
  * @author guiho
  */
 public class FrmGerenciadorAmigo extends javax.swing.JFrame {
    
-    private Amigo objetoamigo;
+    // usa serviço RMI para operações de Amigo
     /**
      * Creates new form FrmGerenciadorAmigo
      */
     public FrmGerenciadorAmigo() {
         initComponents();
-        this.objetoamigo = new Amigo();
         this.carregaTabela();
     }
 /*
@@ -31,14 +32,18 @@ public class FrmGerenciadorAmigo extends javax.swing.JFrame {
     public void carregaTabela(){
         DefaultTableModel modelo = (DefaultTableModel) this.jTableAmigos.getModel();
         modelo.setNumRows(0);
-        ArrayList<Amigo> listaamigo = objetoamigo.ListaAmigo();
-        for (Amigo a : listaamigo){
-            modelo.addRow(new Object[]{
-                a.getIdAmigo(),
-                a.getNomeAmigo(),
-                a.getTelefoneAmigo(),
-                a.getEmailAmigo(),
-            });
+        try {
+            List<Amigo> listaamigo = RMIClient.getServico().listarAmigos();
+            for (Amigo a : listaamigo){
+                modelo.addRow(new Object[]{
+                    a.getIdAmigo(),
+                    a.getNomeAmigo(),
+                    a.getTelefoneAmigo(),
+                    a.getEmailAmigo(),
+                });
+            }
+        } catch (RemoteException rex) {
+            JOptionPane.showMessageDialog(null, "Erro ao carregar amigos: " + rex.getMessage());
         }
     }
     /**
@@ -267,13 +272,17 @@ public class FrmGerenciadorAmigo extends javax.swing.JFrame {
                 email = JTFEmail.getText();
             }
             
-            if (this.objetoamigo.updateAmigoBD(id, nome, telefone, email)) {
+            try {
+                Amigo a = new Amigo(id, nome, telefone, email);
+                RMIClient.getServico().atualizarAmigo(a);
                 JLId.setVisible(false);
                 JTFNome.setText("");
                 JTFTelefone.setText("");
                 JTFEmail.setText("");
                 JOptionPane.showMessageDialog(rootPane, "Amigo alterado com sucesso.");
                 this.carregaTabela();
+            } catch (RemoteException rex) {
+                JOptionPane.showMessageDialog(null, "Erro ao comunicar com servidor: " + rex.getMessage());
             }
         } catch (Mensagem erro) {
             JOptionPane.showMessageDialog(null, erro.getMessage());
@@ -295,15 +304,19 @@ public class FrmGerenciadorAmigo extends javax.swing.JFrame {
             int respostaUsuario = JOptionPane.
                     showConfirmDialog(null, "Tem certeza que deseja apagar este Amigo?");
             if(respostaUsuario ==0){
-                if(this.objetoamigo.deleteAmigoBD(id)){
+                try {
+                    RMIClient.getServico().excluirAmigo(id);
                     this.JTFNome.setText("");
                     this.JTFTelefone.setText("");
                     this.JTFEmail.setText("");
                     JOptionPane.showMessageDialog(rootPane, "Amigo apagado com sucesso!");
+                } catch (RemoteException rex) {
+                    JOptionPane.showMessageDialog(null, "Erro ao comunicar com servidor: " + rex.getMessage());
                 }
             }
             
-            System.out.println(this.objetoamigo.ListaAmigo().toString());
+            // atualiza tabela
+            System.out.println("Atualizando lista de amigos");
            }catch (Mensagem erro){
                JOptionPane.showMessageDialog(null, erro.getMessage());
            }finally{
