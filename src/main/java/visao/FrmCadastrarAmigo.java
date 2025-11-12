@@ -6,16 +6,10 @@ import javax.swing.JOptionPane;
 public class FrmCadastrarAmigo extends javax.swing.JFrame {
 
     /*
-    Cria o vinculo com a classe amigo.
-    */
-    private Amigo objetoamigo;
-    
-    /*
     Cria e inicializa a tela de cadastar amigos.
     */
     public FrmCadastrarAmigo() {
         initComponents();
-        this.objetoamigo = new Amigo();
     }
 
     /**
@@ -149,51 +143,45 @@ public class FrmCadastrarAmigo extends javax.swing.JFrame {
     }//GEN-LAST:event_JTFTelefoneActionPerformed
 
     private void JBCadastrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JBCadastrarActionPerformed
-        // TODO add your handling code here:
-        
-        /*
-        Cadastra um amigo no banco de dados, usando o metodo de InsertDB da classe AmigoDAO.
-        
-        Ele pega as informações dos JavaTextFields, tendo seus requisitos para ser validado.
-        */
-        try{
-            
-            Amigo amigo = new Amigo();
+        try {
             String nome = "";
             String telefone = "";
             String email = "";
             
             if(this.JTFNome.getText().length()<2){
-                throw new Mensagem ("O nome deve possuir ao menos 2 caracteres"); // Aqui para o nome ser valdio, ele deve ter no minimo 2 caracteres
+                throw new Mensagem ("O nome deve possuir ao menos 2 caracteres");
             } else {
                 nome = this.JTFNome.getText();
             }
             
             if(this.JTFTelefone.getText().length() == 9){
-                telefone = (JTFTelefone.getText());
+                telefone = JTFTelefone.getText();
             } else {
-                throw new Mensagem ("O número de telefone deve possuir exatamente 9 digitos"); // Aqui para o telefone ser valido ele tem que ter 9 digitos.
+                throw new Mensagem ("O número de telefone deve possuir exatamente 9 digitos");
             }
             
             if(this.JTFEmail.getText().length()<11){
-                throw new Mensagem("O email deve conter no mínimo 11 dígitos, como: X@gmail.com"); // Aqui para o email ser valido ele tem que ter 11 digitos.
+                throw new Mensagem("O email deve conter no mínimo 11 dígitos, como: X@gmail.com");
             } else {
                 email = this.JTFEmail.getText();
             }
+
+            Amigo amigo = new Amigo(0, nome, telefone, email);
+            rmi.RMIClient.getServico().cadastrarAmigo(amigo);
+
+            JOptionPane.showMessageDialog(null, "Amigo cadastrado com sucesso!");
             
-            if (this.objetoamigo.insertAmigoBD(nome, telefone, email)){ // Aqui, após todos acima estrem de acordo com os requisitos insere o amigo no Banco de dados.
-                JOptionPane.showMessageDialog(null, "Amigo inserido com sucesso!");
-                //Limpa todos os campos da interface
-                this.JTFNome.setText("");
-                this.JTFTelefone.setText("");
-                this.JTFEmail.setText("");
-            }
-            System.out.println(this.objetoamigo.ListaAmigo().toString());
+            //Limpa todos os campos da interface
+            this.JTFNome.setText("");
+            this.JTFTelefone.setText("");
+            this.JTFEmail.setText("");
             
-        } catch (Mensagem erro){
+        } catch (Mensagem erro) {
             JOptionPane.showMessageDialog(null, erro.getMessage());
-        } catch (NumberFormatException erro2){
+        } catch (NumberFormatException erro2) {
             JOptionPane.showMessageDialog(null, "Informe um número válido.");
+        } catch (java.rmi.RemoteException erro3) {
+            JOptionPane.showMessageDialog(null, "Erro ao comunicar com o servidor: " + erro3.getMessage());
         }
     }//GEN-LAST:event_JBCadastrarActionPerformed
 
