@@ -1,26 +1,23 @@
 
 package visao;
 
-import dao.FerramentaDAO;
 import modelo.Ferramenta;
-import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
-import static dao.FerramentaDAO.CalcularSoma;
+import java.rmi.RemoteException;
+import rmi.RMIClient;
 /**
  *
  * @author guiho
  */
 public class FrmGerenciamentoDeFerramentas extends javax.swing.JFrame {
 
-    private Ferramenta ferramenta;
-
     /**
      * Incia os componentes, carrega a lista de ferramentas.
      */
     public FrmGerenciamentoDeFerramentas() {
         initComponents();
-        this.ferramenta = new Ferramenta();
         this.CarregaListaFerramenta();
     }
 
@@ -241,36 +238,40 @@ public class FrmGerenciamentoDeFerramentas extends javax.swing.JFrame {
             String NomeFerramentas = "";
             String MarcaFerramentas = "";
             double CustoFerramentas = 0;
-            
-            
+
             if (this.JTFNomeAlterar.getText().length() < 2){
-                throw new Mensagem("Nome deve conter ao menos 2 caracteres.");              
+                throw new Mensagem("Nome deve conter ao menos 2 caracteres.");
             }else {
                 NomeFerramentas = JTFNomeAlterar.getText();
             }
-            
+
             if (this.JTFMarcaAlterar.getText().length() < 2){
-                throw new Mensagem("A Marca deve conter ao menos 2 caracteres.");              
+                throw new Mensagem("A Marca deve conter ao menos 2 caracteres.");
             }else {
                 MarcaFerramentas = JTFMarcaAlterar.getText();
             }
-            
+
             if (JTFCustoAlterar.getText().length() <= 0){
-                throw new Mensagem("O custo deve ser maior que zero.");              
+                throw new Mensagem("O custo deve ser maior que zero.");
             }else {
                 CustoFerramentas = Double.parseDouble(JTFCustoAlterar.getText());
             }
 
-            if (this.ferramenta.updateFerramentaDB(IdFerramentas, NomeFerramentas, MarcaFerramentas,CustoFerramentas)){
+            // Monta objeto e chama serviço RMI para atualizar
+            Ferramenta f = new Ferramenta(IdFerramentas, NomeFerramentas, MarcaFerramentas, CustoFerramentas);
+            try {
+                RMIClient.getServico().atualizarFerramenta(f);
                 JLId.setVisible(false);
                 JTFNomeAlterar.setText("");
                 JTFMarcaAlterar.setText("");
                 JTFCustoAlterar.setText("");
-                JOptionPane.showMessageDialog(rootPane, "Ferramenta Alterada com sucesso!");
+                JOptionPane.showMessageDialog(rootPane, "Ferramenta alterada com sucesso!");
                 this.CarregaListaFerramenta();
-                }
+            } catch (RemoteException rex) {
+                JOptionPane.showMessageDialog(null, "Erro ao comunicar com o servidor: " + rex.getMessage());
+            }
         } catch (Mensagem erro){
-            JOptionPane.showMessageDialog(null, erro.getMessage());          
+            JOptionPane.showMessageDialog(null, erro.getMessage());
         }
     }//GEN-LAST:event_JBAlterarActionPerformed
 
@@ -283,21 +284,23 @@ public class FrmGerenciamentoDeFerramentas extends javax.swing.JFrame {
         try {
             int IdFerramentas = 0;
             if (this.JTableFerramentas.getSelectedRow() == -1){
-                throw new Mensagem("Primeiro Selecione uma ferramenta para APAGAR.");
+                throw new Mensagem("Primeiro selecione uma ferramenta para APAGAR.");
             } else {
                 IdFerramentas = Integer.parseInt(this.JTableFerramentas.getValueAt(this.JTableFerramentas.getSelectedRow(),0).toString());
             }
             int respostaUsuario = JOptionPane.showConfirmDialog(null,"Tem certeza que deseja apagar essa ferramenta?");
             if(respostaUsuario == 0) {
-                if(this.ferramenta.DeleteFerramentaDB(IdFerramentas)){
+                try {
+                    RMIClient.getServico().excluirFerramenta(IdFerramentas);
                     this.JLId.setText("0");
                     this.JTFNomeAlterar.setText("");
                     this.JTFMarcaAlterar.setText("");
                     this.JTFCustoAlterar.setText("");
-                    JOptionPane.showMessageDialog(rootPane, "Ferramenta Apagada com sucesso!!");
+                    JOptionPane.showMessageDialog(rootPane, "Ferramenta apagada com sucesso!!");
+                } catch (RemoteException rex) {
+                    JOptionPane.showMessageDialog(null, "Erro ao comunicar com o servidor: " + rex.getMessage());
                 }
             }
-            System.out.println(this.ferramenta.ListaFerramenta().toString());
         }  catch (Mensagem erro) {
             JOptionPane.showMessageDialog(null, erro.getMessage());
         } finally {
@@ -343,18 +346,24 @@ public void CarregaListaFerramenta(){
     DefaultTableModel modelo = (DefaultTableModel) this.JTableFerramentas.getModel();
     JLId.setVisible(false); /* Deixa o label que informa o Id vazio até que alguma ferramenta seja clicada */
     modelo.setNumRows(0);
-    ArrayList<Ferramenta> ListaFerramenta = ferramenta.ListaFerramenta();
-    for (Ferramenta a : ListaFerramenta){
-        modelo.addRow(new Object[]{
-        a.getIdFerramentas(),
-        a.getNomeFerramentas(),
-        a.getMarcaFerramentas(),
-        a.getCustoFerramentas(),
-        a.getDisponibilidadeFerramenta(a.getIdFerramentas())
-});
-        double soma = FerramentaDAO.CalcularSoma(ListaFerramenta);
+    try {
+        List<Ferramenta> ListaFerramenta = RMIClient.getServico().listarFerramentas();
+        double soma = 0.0;
+        for (Ferramenta a : ListaFerramenta){
+            // Disponibilidade não está disponível via front-end direto; exibe "-" por enquanto
+            modelo.addRow(new Object[]{
+                a.getIdFerramentas(),
+                a.getNomeFerramentas(),
+                a.getMarcaFerramentas(),
+                a.getCustoFerramentas(),
+                "-"
+            });
+            soma += a.getCustoFerramentas();
+        }
         JLSoma.setText(String.valueOf("R$" + soma));
-}
+    } catch (RemoteException rex) {
+        JOptionPane.showMessageDialog(null, "Erro ao carregar lista de ferramentas: " + rex.getMessage());
+    }
 }   
     
     
