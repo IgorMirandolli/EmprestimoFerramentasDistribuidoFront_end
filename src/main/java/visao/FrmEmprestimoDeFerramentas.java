@@ -4,17 +4,14 @@
  */
 package visao;
 
-import java.sql.*;
-import dao.Utilitario;
 import javax.swing.*;
 import modelo.Emprestimo;
 import modelo.Ferramenta;
-import dao.EmprestimoDAO;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 import modelo.Amigo;
+import java.rmi.RemoteException;
+import rmi.RMIClient;
 
 /**
  *
@@ -22,16 +19,11 @@ import modelo.Amigo;
  */
 public class FrmEmprestimoDeFerramentas extends javax.swing.JFrame {
 
-    private Ferramenta ferramenta;
-    private Amigo amigo;
     /**
      * Creates new form FrmEmprestimoDeFerramentas
      */
     public FrmEmprestimoDeFerramentas() {
         initComponents();
-        
-        this.amigo = new Amigo();
-        this.ferramenta = new Ferramenta();
         inicializarJBCNomeAmigo();
         inicializarJBCNomeFerramenta();
     }
@@ -156,10 +148,13 @@ public class FrmEmprestimoDeFerramentas extends javax.swing.JFrame {
      * Conecta com a coluna nome da tb_amigos do banco de dados.
      */
     private void inicializarJBCNomeAmigo(){
-        
-        ArrayList<Amigo> listaAmigo = amigo.ListaAmigo();
-        for (Amigo objeto : listaAmigo) {
-            jCBNomeAmigo.addItem(objeto.getIdAmigo() + "- " + objeto.getNomeAmigo());
+        try {
+            List<Amigo> listaAmigo = RMIClient.getServico().listarAmigos();
+            for (Amigo objeto : listaAmigo) {
+                jCBNomeAmigo.addItem(objeto.getIdAmigo() + "- " + objeto.getNomeAmigo());
+            }
+        } catch (RemoteException rex) {
+            JOptionPane.showMessageDialog(null, "Erro ao listar amigos: " + rex.getMessage());
         }
 
     }
@@ -169,10 +164,13 @@ public class FrmEmprestimoDeFerramentas extends javax.swing.JFrame {
      * para usar no jComboBox.
      */
     private void inicializarJBCNomeFerramenta(){
-        
-            ArrayList<Ferramenta> listaFerramenta = ferramenta.ListaFerramenta();
-        for (Ferramenta objeto : listaFerramenta) {
-            jCBNomeFerramenta.addItem(objeto.getIdFerramentas() + "- " + objeto.getNomeFerramentas());
+        try {
+            List<Ferramenta> listaFerramenta = RMIClient.getServico().listarFerramentas();
+            for (Ferramenta objeto : listaFerramenta) {
+                jCBNomeFerramenta.addItem(objeto.getIdFerramentas() + "- " + objeto.getNomeFerramentas());
+            }
+        } catch (RemoteException rex) {
+            JOptionPane.showMessageDialog(null, "Erro ao listar ferramentas: " + rex.getMessage());
         }
 
     }
@@ -187,36 +185,68 @@ public class FrmEmprestimoDeFerramentas extends javax.swing.JFrame {
     */
     private void JBConfirmarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JBConfirmarActionPerformed
         // TODO add your handling code here:
-     try {
-    int conf = 0;
+        try {
+            int conf = 0;
 
-    int posicaoFerramenta = jCBNomeFerramenta.getSelectedIndex();
-    int posicaoAmigo = jCBNomeAmigo.getSelectedIndex();
-    ArrayList<Ferramenta> listaFerramenta = ferramenta.ListaFerramenta();
-    ArrayList<Amigo> listaAmigo = amigo.ListaAmigo();
-    Emprestimo emprestimo = new Emprestimo();
+            int posicaoFerramenta = jCBNomeFerramenta.getSelectedIndex();
+            int posicaoAmigo = jCBNomeAmigo.getSelectedIndex();
 
-    if (!listaFerramenta.get(posicaoFerramenta).getDisponibilidadeFerramenta(listaFerramenta.get(posicaoFerramenta).getIdFerramentas())) {
-        throw new Mensagem("Ferramenta já emprestada");
-    }
+            List<Ferramenta> listaFerramenta = RMIClient.getServico().listarFerramentas();
+            List<Amigo> listaAmigo = RMIClient.getServico().listarAmigos();
+            List<Emprestimo> listaEmprestimos = RMIClient.getServico().listarEmprestimos();
 
-    int idAmigo = listaAmigo.get(posicaoAmigo).getIdAmigo();
-    if (amigo.possuiEmprestimoAtivo(idAmigo)) {
-        conf = JOptionPane.showConfirmDialog(null, "Este amigo já possui um empréstimo ativo, deseja continuar?");
-    }
+            if (posicaoFerramenta < 0 || posicaoAmigo < 0) {
+                throw new Mensagem("Selecione amigo e ferramenta.");
+            }
 
-    int idFerramenta = listaFerramenta.get(posicaoFerramenta).getIdFerramentas();
-    String DataInicio = LocalDate.now().toString();
-    
-    if (conf == 0) {
-        if (emprestimo.insertEmprestimoBD(idAmigo, idFerramenta, DataInicio)) {
-            JOptionPane.showMessageDialog(null, "Empréstimo cadastrado com sucesso");
-            ferramenta.updateFerramentaDB(idFerramenta, listaFerramenta.get(posicaoFerramenta).getNomeFerramentas(), listaFerramenta.get(posicaoFerramenta).getMarcaFerramentas(), listaFerramenta.get(posicaoFerramenta).getCustoFerramentas());
+            int idFerramenta = listaFerramenta.get(posicaoFerramenta).getIdFerramentas();
+
+            // Verifica disponibilidade: se existir emprestimo ativo para a ferramenta
+            boolean disponivel = true;
+            for (Emprestimo e : listaEmprestimos) {
+                if (e.getIdFerramentas() == idFerramenta && (e.getDataDev() == null || e.getDataDev().isEmpty())) {
+                    disponivel = false;
+                    break;
+                }
+            }
+            if (!disponivel) {
+                throw new Mensagem("Ferramenta já emprestada");
+            }
+
+            int idAmigo = listaAmigo.get(posicaoAmigo).getIdAmigo();
+            // Verifica se amigo possui emprestimo ativo
+            boolean amigoComEmprestimo = false;
+            for (Emprestimo e : listaEmprestimos) {
+                if (e.getIdAmigo() == idAmigo && (e.getDataDev() == null || e.getDataDev().isEmpty())) {
+                    amigoComEmprestimo = true;
+                    break;
+                }
+            }
+            if (amigoComEmprestimo) {
+                conf = JOptionPane.showConfirmDialog(null, "Este amigo já possui um empréstimo ativo, deseja continuar?");
+            }
+
+            String DataInicio = LocalDate.now().toString();
+
+            if (conf == 0) {
+                Emprestimo novo = new Emprestimo(0, idAmigo, idFerramenta, DataInicio, "");
+                try {
+                    RMIClient.getServico().registrarEmprestimo(novo);
+                    JOptionPane.showMessageDialog(null, "Empréstimo cadastrado com sucesso");
+                    // Recarrega combos
+                    jCBNomeAmigo.removeAllItems();
+                    jCBNomeFerramenta.removeAllItems();
+                    inicializarJBCNomeAmigo();
+                    inicializarJBCNomeFerramenta();
+                } catch (RemoteException rex) {
+                    JOptionPane.showMessageDialog(null, "Erro ao comunicar com servidor: " + rex.getMessage());
+                }
+            }
+        } catch (Mensagem erro) {
+            JOptionPane.showMessageDialog(null, erro.getMessage());
+        } catch (RemoteException rex) {
+            JOptionPane.showMessageDialog(null, "Erro ao comunicar com servidor: " + rex.getMessage());
         }
-    }
-} catch (Mensagem erro) {
-    JOptionPane.showMessageDialog(null, erro.getMessage());
-}
     }//GEN-LAST:event_JBConfirmarActionPerformed
 
     private void jCBNomeAmigoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBNomeAmigoActionPerformed
@@ -230,17 +260,25 @@ public class FrmEmprestimoDeFerramentas extends javax.swing.JFrame {
     Carrega a tabela de emprestimos, por isso puxa uma tabela de amigos e uma de ferramentas.
     */
     public void carregaCBFerramenta() {
-        ArrayList<Ferramenta> listaFerramenta = ferramenta.ListaFerramenta();
-        for (Ferramenta objeto : listaFerramenta) {
-            jCBNomeFerramenta.addItem(objeto.getIdFerramentas() + "- " + objeto.getNomeFerramentas());
+        try {
+            List<Ferramenta> listaFerramenta = RMIClient.getServico().listarFerramentas();
+            for (Ferramenta objeto : listaFerramenta) {
+                jCBNomeFerramenta.addItem(objeto.getIdFerramentas() + "- " + objeto.getNomeFerramentas());
+            }
+        } catch (RemoteException rex) {
+            JOptionPane.showMessageDialog(null, "Erro ao listar ferramentas: " + rex.getMessage());
         }
 
     }
 
     public void carregaCBAmigo() {
-        ArrayList<Amigo> listaAmigo = amigo.ListaAmigo();
-        for (Amigo objeto : listaAmigo) {
-            jCBNomeAmigo.addItem(objeto.getIdAmigo() + "- " + objeto.getNomeAmigo());
+        try {
+            List<Amigo> listaAmigo = RMIClient.getServico().listarAmigos();
+            for (Amigo objeto : listaAmigo) {
+                jCBNomeAmigo.addItem(objeto.getIdAmigo() + "- " + objeto.getNomeAmigo());
+            }
+        } catch (RemoteException rex) {
+            JOptionPane.showMessageDialog(null, "Erro ao listar amigos: " + rex.getMessage());
         }
 
     }       
