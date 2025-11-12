@@ -21,4 +21,16 @@ public interface EmprestimoFerramentasInterface extends Remote {
     List<Amigo> listarAmigos() throws RemoteException;
     
     
+    // Operações para Ferramenta
+    void cadastrarFerramenta(Ferramenta ferramenta) throws RemoteException;
+    
+    void atualizarFerramenta(Ferramenta ferramenta) throws RemoteException;
+    
+    void excluirFerramenta(int id) throws RemoteException;
+    
+    Ferramenta buscarFerramentaPorId(int id) throws RemoteException;
+    
+    List<Ferramenta> listarFerramentas() throws RemoteException;
+
+    
 }
