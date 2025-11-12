@@ -1,14 +1,16 @@
 package visao;
 
-import static dao.AmigoDAO.ListaAmigo;
 import modelo.Emprestimo;
-import static dao.FerramentaDAO.ListaFerramentas;
 import javax.swing.JOptionPane;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.table.DefaultTableModel;
 import modelo.Amigo;
 import modelo.Ferramenta;
+import java.util.List;
+import java.rmi.RemoteException;
+import rmi.RMIClient;
+import modelo.Emprestimo;
 
 public class FrmRelatorioEmprestimo extends javax.swing.JFrame {
 
@@ -16,18 +18,11 @@ public class FrmRelatorioEmprestimo extends javax.swing.JFrame {
     Cria o vinculo com o Emprestimo ; Amigo e Ferramentas
     */
 
-    private Emprestimo emprestimo;
-    private Amigo amigo;
-    private Ferramenta ferramenta;
-
     /*
     Inicia o FRMRelatorioEmprestimo, com todos seus componentes carregando e atualizando a tabela.
     */
     public FrmRelatorioEmprestimo() {
         initComponents();
-        this.emprestimo = new Emprestimo();
-        this.ferramenta = new Ferramenta();
-        this.amigo = new Amigo();
         this.CarregaListaEmprestimo();
         this.AtualizarAmigoMaisRepetido();
     }
@@ -37,8 +32,7 @@ public class FrmRelatorioEmprestimo extends javax.swing.JFrame {
      * AVISO: NÃO modifique este código. O conteúdo deste método é sempre
      * regenerado pelo Editor de Formulários.
      */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -224,16 +218,16 @@ public class FrmRelatorioEmprestimo extends javax.swing.JFrame {
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    private void JBCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JBCancelarActionPerformed
+    private void JBCancelarActionPerformed(java.awt.event.ActionEvent evt) {                                           
         // Cancela a ação
         this.dispose();
-    }//GEN-LAST:event_JBCancelarActionPerformed
+    }                                          
 /*
     Torna possivel exibir as informações de um emprestimo nos labels ao clicar neles.
     */
-    private void JTEmprestimosAtivosMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_JTEmprestimosAtivosMouseClicked
+    private void JTEmprestimosAtivosMouseClicked(java.awt.event.MouseEvent evt) {                                                 
         // TODO add your handling code here:
        try {
             if (this.JTEmprestimosAtivos.getSelectedRow() != -1) {
@@ -256,20 +250,31 @@ public class FrmRelatorioEmprestimo extends javax.swing.JFrame {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Erro ao selecionar empréstimo: " + e.getMessage());
         }    
-    }//GEN-LAST:event_JTEmprestimosAtivosMouseClicked
+    }                                                
 /*
     Torna possivel deletar um emprestimo ao apertar no botão de apagar.
     */
-    private void JBApagarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_JBApagarActionPerformed
+    private void JBApagarActionPerformed(java.awt.event.ActionEvent evt) {                                         
 
-        emprestimo.deleteEmprestimoBD(Integer.parseInt(JLId.getText()));
-        JLId.setVisible(false);
-        JLnomeamigo.setText("");
-        JLnomeferramenta.setText("");
-        JLdataEmp.setText("");
-        JldataDev.setText("");
-        this.CarregaListaEmprestimo();
-    }//GEN-LAST:event_JBApagarActionPerformed
+        try {
+            int id = Integer.parseInt(JLId.getText());
+            try {
+                // Não existe método remoto para apagar um registro de empréstimo
+                // marcamos como devolvido através do serviço RMI
+                rmi.RMIClient.getServico().devolverFerramenta(id);
+                JLId.setVisible(false);
+                JLnomeamigo.setText("");
+                JLnomeferramenta.setText("");
+                JLdataEmp.setText("");
+                JldataDev.setText("");
+                this.CarregaListaEmprestimo();
+            } catch (RemoteException rex) {
+                JOptionPane.showMessageDialog(null, "Erro ao comunicar com servidor: " + rex.getMessage());
+            }
+        } catch (NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(null, "ID inválido.");
+        }
+    }                                        
 
             
 
@@ -281,41 +286,38 @@ public class FrmRelatorioEmprestimo extends javax.swing.JFrame {
 public void CarregaListaEmprestimo() {
 DefaultTableModel model = (DefaultTableModel) JTEmprestimosAtivos.getModel();
 model.setRowCount(0);
-ArrayList<Emprestimo> listaEmprestimo = emprestimo.ListaEmprestimo();
-ArrayList<Ferramenta> listaFerramentas = ferramenta.ListaFerramenta();
-ArrayList<Amigo> listaAmigos = amigo.ListaAmigo();
+    try {
+        List<Emprestimo> listaEmprestimo = RMIClient.getServico().listarEmprestimos();
+        List<Ferramenta> listaFerramentas = RMIClient.getServico().listarFerramentas();
+        List<Amigo> listaAmigos = RMIClient.getServico().listarAmigos();
 
-for (int i = 0; i < listaEmprestimo.size(); i++) {
-    String nomeFerramenta = "";
-    String nomeAmigo = ""; 
-    
-   
-    for (Ferramenta ferramenta : listaFerramentas) {
-        if (ferramenta.getIdFerramentas() == listaEmprestimo.get(i).getIdFerramentas()) {
-            nomeFerramenta = ferramenta.getNomeFerramentas(); 
-            break; 
+        for (Emprestimo emp : listaEmprestimo) {
+            String nomeFerramenta = "";
+            String nomeAmigo = "";
+            for (Ferramenta f : listaFerramentas) {
+                if (f.getIdFerramentas() == emp.getIdFerramentas()) {
+                    nomeFerramenta = f.getNomeFerramentas();
+                    break;
+                }
+            }
+            for (Amigo a : listaAmigos) {
+                if (a.getIdAmigo() == emp.getIdAmigo()) {
+                    nomeAmigo = a.getNomeAmigo();
+                    break;
+                }
+            }
+            model.addRow(new Object[]{
+                emp.getIdEmprestimo(),
+                nomeAmigo,
+                nomeFerramenta,
+                emp.getDataEmp(),
+                emp.getDataDev(),
+                (emp.getDataDev() == null || emp.getDataDev().isEmpty())
+            });
         }
+    } catch (RemoteException rex) {
+        JOptionPane.showMessageDialog(null, "Erro ao carregar relatório: " + rex.getMessage());
     }
-    
-    // Procura o amigo correspondente ao ID do empréstimo
-    for (Amigo amigo : listaAmigos) {
-        if (amigo.getIdAmigo() == listaEmprestimo.get(i).getIdAmigo()) {
-            nomeAmigo = amigo.getNomeAmigo(); 
-            break; 
-        }
-    }
-    
-   
-    model.addRow(new Object[]{
-        listaEmprestimo.get(i).getIdEmprestimo(),
-        
-        nomeAmigo, 
-        nomeFerramenta, 
-        listaEmprestimo.get(i).getDataEmp(),
-        listaEmprestimo.get(i).getDataDev(),
-        listaEmprestimo.get(i).emprestimoAtivo(listaEmprestimo.get(i).getIdEmprestimo())
-    });
-}
 }
 /*
 O metodo analisa qual nome mais repete e insere ele num label, exibindo qual o amigo mais repetido.
@@ -393,7 +395,7 @@ Metodo que coloca o metodo acima em um label.
     
     
     
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton JBApagar;
     private javax.swing.JButton JBCancelar;
     private javax.swing.JLabel JLDataDevolução;
@@ -412,5 +414,5 @@ Metodo que coloca o metodo acima em um label.
     private javax.swing.JLabel jLabel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }
