@@ -14,22 +14,26 @@ O presente trabalho tem como objetivo projetar e desenvolver um sistema distribu
 
 ## 🧩 Requisitos Funcionais
 
-RF001 – CRUD de Amigos	O sistema deve permitir ao usuário cadastrar, visualizar, editar e excluir registros de amigos.
-RF002 – CRUD de Ferramentas	O sistema deve permitir ao usuário cadastrar, visualizar, editar e excluir registros de ferramentas.
-RF003 – Registro de Empréstimos	O sistema deve permitir registrar um novo empréstimo, associando um amigo previamente cadastrado a uma ou mais ferramentas disponíveis.
-RF004 – Registro de Devolução	O sistema deve permitir registrar a devolução de ferramentas emprestadas, atualizando o status do empréstimo.
-RF005 – Listagem de Ferramentas Disponíveis	O sistema deve fornecer uma funcionalidade para listar todas as ferramentas que não estão associadas a um empréstimo ativo.
-RF006 – Histórico de Empréstimos	O sistema deve permitir consultar o histórico completo de empréstimos, contendo informações sobre amigos, ferramentas, datas de empréstimo e devolução.
+| Código  | Nome                             | Descrição |
+|----------|----------------------------------|------------|
+| **RF001** | **CRUD de Amigos** | O sistema deve permitir ao usuário **cadastrar**, **visualizar**, **editar** e **excluir** registros de amigos. |
+| **RF002** | **CRUD de Ferramentas** | O sistema deve permitir ao usuário **cadastrar**, **visualizar**, **editar** e **excluir** registros de ferramentas. |
+| **RF003** | **Registro de Empréstimos** | O sistema deve permitir **registrar um novo empréstimo**, associando um amigo previamente cadastrado a uma ou mais ferramentas disponíveis. |
+| **RF004** | **Registro de Devolução** | O sistema deve permitir **registrar a devolução** de ferramentas emprestadas, atualizando o **status do empréstimo**. |
+| **RF005** | **Listagem de Ferramentas Disponíveis** | O sistema deve fornecer uma funcionalidade para **listar todas as ferramentas** que não estão associadas a um **empréstimo ativo**. |
+| **RF006** | **Histórico de Empréstimos** | O sistema deve permitir **consultar o histórico completo de empréstimos**, contendo informações sobre amigos, ferramentas, datas de empréstimo e devolução. |
 
 ---
 
 ## 🧱 Requisitos Não Funcionais
 
-RNF001 – Arquitetura de Comunicação	O sistema deve operar em uma arquitetura Cliente-Servidor, utilizando exclusivamente Java RMI (Remote Method Invocation) para a comunicação entre as camadas.
-RNF002 – Persistência de Dados	Todos os dados (amigos, ferramentas e empréstimos) devem ser armazenados em um banco de dados local acessível apenas pelo servidor. O cliente não deve ter acesso direto ao banco.
-RNF003 – Distribuição	O sistema deve permitir que cliente e servidor sejam executados em máquinas distintas, comunicando-se através de uma rede local (LAN) ou Internet.
-RNF004 – Modularidade	O código-fonte deve ser estruturado de forma modular, com separação clara entre as camadas de modelo, visão, controle e comunicação, facilitando manutenção e reuso.
-RNF005 – Tecnologia Utilizada	O sistema deve ser desenvolvido inteiramente em Java, utilizando Swing para a interface gráfica do cliente e SQLite para o armazenamento de dados no servidor.
+| Código  | Nome                        | Descrição |
+|----------|-----------------------------|------------|
+| **RNF001** | **Arquitetura de Comunicação** | O sistema deve operar em uma arquitetura Cliente-Servidor, utilizando exclusivamente **Java RMI (Remote Method Invocation)** para a comunicação entre as camadas. |
+| **RNF002** | **Persistência de Dados** | Todos os dados (amigos, ferramentas e empréstimos) devem ser armazenados em um **banco de dados local** acessível apenas pelo servidor. O cliente não deve ter acesso direto ao banco. |
+| **RNF003** | **Distribuição** | O sistema deve permitir que cliente e servidor sejam executados em **máquinas distintas**, comunicando-se através de uma **rede local (LAN)** ou **Internet**. |
+| **RNF004** | **Modularidade** | O código-fonte deve ser estruturado de forma **modular**, com separação clara entre as camadas de **modelo**, **visão**, **controle** e **comunicação**, facilitando **manutenção e reuso**. |
+| **RNF005** | **Tecnologia Utilizada** | O sistema deve ser desenvolvido inteiramente em **Java**, utilizando **Swing** para a interface gráfica do cliente e **SQLite** para o armazenamento de dados no servidor. |
 
 ---
 
