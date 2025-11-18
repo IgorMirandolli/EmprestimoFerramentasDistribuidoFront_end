@@ -2,19 +2,23 @@ package modelo;
 
 import java.io.Serializable;
 
+
+// Representa uma ferramenta cadastrada no sistema
 public class Ferramenta implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    // Field names must match server-side model for Java serialization
+    // Dados da ferramenta
     private int IdFerramentas;
     private String NomeFerramentas;
     private String MarcaFerramentas;
     private double CustoFerramentas;
 
+    //Construtor vazio. Cria ferramenta com valores padrão
     public Ferramenta() {
         this(0, "", "", 0.0);
     }
 
+    // Construtor padrão. Cria ferramenta com todos os dados preenchidos
     public Ferramenta(int IdFerramentas, String NomeFerramentas, String MarcaFerramentas, double CustoFerramentas) {
         this.IdFerramentas = IdFerramentas;
         this.NomeFerramentas = NomeFerramentas;
@@ -22,6 +26,7 @@ public class Ferramenta implements Serializable {
         this.CustoFerramentas = CustoFerramentas;
     }
 
+    
     public int getIdFerramentas() {
         return IdFerramentas;
     }
